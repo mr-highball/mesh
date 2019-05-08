@@ -48,6 +48,17 @@ type
     function Serialize(Out Success:Boolean; Out Error:String): String;
   end;
 
+  { ILogger }
+  (*
+    provides contract for objects that can log
+  *)
+  ILogger = interface
+    ['{FF5CBD92-D96D-4D25-844B-B50D41ADA5E7}']
+    procedure LogInfo(Const AMessage : String);
+    procedure LogWarning(Const AMessage : String);
+    procedure LogError(Const AMessage : String);
+  end;
+
   (*
     currently a signal maps to a byte, this might change...
   *)
@@ -178,12 +189,24 @@ type
     function GetSerial: ISerialize;
     function GetConnectors: IConnectors;
     function GetPatterns: IPatterns;
+    function GetSignal: TSignal;
 
     //properties
     property Serialize : ISerialize read GetSerial;
     property Connectors : IConnectors read GetConnectors;
     property Patterns : IPatterns read GetPatterns;
+    property Signal : TSignal read GetSignal;
+
     //methods
+    (*
+      adds a signal to the current signal value
+    *)
+    procedure Charge(Const ASignal : TSignal);
+
+    (*
+      reduces the current signal value by input
+    *)
+    procedure Discharge(Const ASignal : TSignal);
   end;
 
   { IConnector }
@@ -223,7 +246,15 @@ type
   *)
   function DesignatorForSignal(Const ASignal:TSignal): TSignalDesignator;
 
+var
+  (*
+    a default logger that classes can optionally use
+  *)
+  DefaultLogger : ILogger;
+
 implementation
+uses
+  mesh.logger.console;
 
 procedure RangeForSignal(const ADesignator: TSignalDesignator; out Lower,
   Upper: TSignal);
@@ -292,5 +323,12 @@ begin
   SetSignal(ASignal);
 end;
 
+initialization
+  //setup the default logger as the console logger
+  { TODO -ohighball : choose a logger depending on console/ui or more advanced logger }
+  DefaultLogger:=TConsoleLoggerImpl.Create;
+
+finalization
+  DefaultLogger:=nil;
 end.
 
