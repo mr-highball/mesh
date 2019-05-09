@@ -179,6 +179,11 @@ type
     { TODO -ohighball : once connector is spec'd out, add some helper methods }
   end;
 
+  (*
+    unique identifier for a node
+  *)
+  TNodeID = String;
+
   { INode }
   (*
     main worker unit inside of a mesh network
@@ -190,12 +195,14 @@ type
     function GetConnectors: IConnectors;
     function GetPatterns: IPatterns;
     function GetSignal: TSignal;
+    function GetID: TNodeID;
 
     //properties
     property Serialize : ISerialize read GetSerial;
     property Connectors : IConnectors read GetConnectors;
     property Patterns : IPatterns read GetPatterns;
     property Signal : TSignal read GetSignal;
+    property ID : TNodeID read GetID;
 
     //methods
     (*
@@ -203,10 +210,98 @@ type
     *)
     procedure Charge(Const ASignal : TSignal);
 
+    { TODO -ohighball : handle charging from a connector? need to work
+                        out this mechanic so that the node will know
+                        where the signal came from. also, this might just
+                        need to be worked out at the implementation layer
+                        to keep this as simple and flexible as possible}
+
     (*
       reduces the current signal value by input
     *)
     procedure Discharge(Const ASignal : TSignal);
+  end;
+
+  (*
+    collections for nodes
+  *)
+  TNodeList = TFPGInterfacedObjectList<INode>;
+  TNodeMap<T> = class(TFPGMapInterfacedObjectData<T,INode>)
+  end;
+
+  { INodes }
+  (*
+    interface for working with a node list
+  *)
+  INodes = interface
+    ['{3CEE4718-51C0-4370-8A8D-8956D6869482}']
+    //property methods
+    function GetCollection: TNodeList;
+
+    //properties
+    property Collection : TNodeList read GetCollection;
+  end;
+
+  { INodePair }
+  (*
+    pair of connected nodes
+  *)
+  INodePair = interface
+    ['{A16861BE-8307-415C-B443-7EAD2037F03C}']
+    //property methods
+    function GetA: INode;
+    function GetB: INode;
+    function GetOther(Const ANode : INode): INode;
+    procedure SetA(Const AValue: INode);
+    procedure SetB(Const AValue: INode);
+
+    //properties
+    property A : INode read GetA write SetA;
+    property B : INode read GetB write SetB;
+
+    (*
+      returns the "other" node (ie. incase of A being provided B will return)
+    *)
+    property Other[Const ANode : INode] : INode read GetOther;default;
+  end;
+
+  (*
+    collection for node pairs
+  *)
+  TNodePairList = TFPGInterfacedObjectList<INodePair>;
+  TNodePairMap<T> = class(TFPGMapInterfacedObjectData<T,INodePair>)
+  end;
+
+  { INodePairs }
+  (*
+    interface for working with node pair list
+  *)
+  INodePairs = interface
+    ['{FEDF9075-4DEA-440B-A481-A5D5F4CA68F7}']
+    //property methods
+    function GetCollection: TNodePairList;
+
+    //properties
+    property Collection : TNodePairList read GetCollection;
+  end;
+
+  (*
+    a collection for accessing all "other" nodes connected to a
+    particular node
+  *)
+  TConnectedNodeMap = TFPGMapInterfacedObjectData<TNodeID,INodes>;
+
+  { IConnectedNodes }
+  (*
+    interface for working with a connected node map
+  *)
+  IConnectedNodes = interface
+    ['{BBE43AA7-D947-4A7F-A612-3FC8090D57E1}']
+    //property methods
+    function GetMap: TConnectedNodeMap;
+
+    //properties
+    property Collection : TConnectedNodeMap read GetMap;
   end;
 
   { IConnector }
@@ -217,9 +312,34 @@ type
     ['{6BF6F8C7-97B3-4A8C-B608-658E3D38C36E}']
     //property methods
     function GetSerial: ISerialize;
+    function GetConnected(const ANode : INode): INodes;
+    function GetPairs: INodePairs;
 
     //properties
     property Serialize : ISerialize read GetSerial;
+
+    (*
+      all connected node pairs this connector is responsible for
+    *)
+    property Pairs : INodePairs read GetPairs;
+
+    (*
+      indexer for returning nodes connected to a particular node
+    *)
+    property Connected[Const ANode : INode] : INodes read GetConnected;default;
+
+    //methods
+    procedure Connect(Const A, B : INode);
+
+    (*
+      disconnects one node from another (removes pair)
+    *)
+    procedure Disconnect(Const A, B : INode);overload;
+
+    (*
+      disconnects a node from all other nodes it's connect to
+    *)
+    procedure Disconnect(Const ANode : INode);overload;
   end;
 
   { IMesh }
