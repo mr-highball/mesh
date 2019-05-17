@@ -48,6 +48,21 @@ type
     function Serialize(Out Success:Boolean; Out Error:String): String;
   end;
 
+  { IDeserialize }
+  (*
+    provides contract for deserializing a string into an object
+  *)
+  IDeserialize = interface
+    ['{7C3F25B7-D0CB-4F79-812A-263A59E3F013}']
+
+    { TODO -ohighball : need an impl class for this }
+
+    (*
+      takes an Input string and correctly assign properties
+    *)
+    function Deserialize(Const Input:String; Out Error:String): Boolean;
+  end;
+
   { ILogger }
   (*
     provides contract for objects that can log
@@ -137,7 +152,7 @@ type
 
   { IPatterns }
   (*
-
+    interface for pattern list collection
   *)
   IPatterns = interface
     ['{4C40548F-D4CF-4707-A98E-0F9B4F88EE6A}']
@@ -174,6 +189,8 @@ type
     //properties
     property Serialize : ISerialize read GetSerial;
     property Collection : TConnectors read GetCollection;
+
+    { TODO -ohighball : we should probably have a deserialize here? }
 
     //methods
     { TODO -ohighball : once connector is spec'd out, add some helper methods }
